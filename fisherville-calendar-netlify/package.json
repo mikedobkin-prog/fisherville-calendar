@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "build": "node scripts/build.mjs",
-    "test": "node tests/verify.mjs"
+    "test": "node tests/verify.mjs && node tests/readability.mjs"
   },
   "engines": {
     "node": ">=22"
