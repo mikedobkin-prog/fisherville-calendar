@@ -1,6 +1,0 @@
-[build]
-command = "npm run build"
-publish = "production"
-[functions]
-directory = "netlify/functions"
-node_bundler = "esbuild"
