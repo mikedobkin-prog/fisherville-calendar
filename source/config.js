@@ -28,7 +28,7 @@ window.FISHERVILLE_CONFIG = {
       "id": "c_6175b86c9eace96a4a47d3850d7c249ef3ace437dd2b96fdc612bc12dfb88132@group.calendar.google.com",
       "name": "Events",
       "target": "upcoming",
-      "color": "#FFB18F"
+      "color": "#FFE58A"
     },
     {
       "uid": "fisherville-sports",
