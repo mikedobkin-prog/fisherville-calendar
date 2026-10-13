@@ -7,3 +7,5 @@ To update an existing GitHub connected Netlify site, replace the repository file
 Validation: JavaScript syntax, production build, recurring changes and cancellations, all day ranges, Toronto conversion, three slot sizing and source ordering were checked. All five public Google feeds responded successfully, including Sports and Team. Browser visual testing at 1920 by 1080 and testing in your own Netlify account were unavailable. Check the TV after deployment, particularly long titles and lunch entries.
 
 Upcoming Events shows up to ten all day events after the displayed two weeks, using the existing 90 day lookahead. The previous ten day restriction is removed. TDSB entries are included except Day 1 to Day 5. The main calendar is unchanged.
+
+Events calendar colour changed from coral to warm yellow (#FFE58A), with dark navy text (#102342) and a gold edge (#B88716). Other source calendar colours are unchanged.

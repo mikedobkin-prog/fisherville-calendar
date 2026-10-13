@@ -1,0 +1,17 @@
+import fs from 'node:fs';import vm from 'node:vm';import assert from 'node:assert/strict';import handler from '../netlify/functions/calendar-feed.mjs';const worker={fetch:handler};
+const app=fs.readFileSync('source/app.js','utf8');const ctx={};vm.createContext(ctx);vm.runInContext(fs.readFileSync('source/assets/ical.min.js','utf8'),ctx);vm.runInContext(app.slice(app.indexOf('function publicFeedEvents('),app.indexOf('async function calendarEvents(')),ctx);
+const feed=(body)=>'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Fisherville//Test//EN\r\n'+body+'\r\nEND:VCALENDAR';
+const event=(lines)=>'BEGIN:VEVENT\r\n'+lines.join('\r\n')+'\r\nEND:VEVENT';
+const base=event(['UID:repeat','DTSTART:20261019T140000Z','DTEND:20261019T150000Z','RRULE:FREQ=DAILY;COUNT=3','SUMMARY:Original']);
+const changed=event(['UID:repeat','RECURRENCE-ID:20261020T140000Z','DTSTART:20261020T160000Z','DTEND:20261020T170000Z','SUMMARY:Changed']);
+const cancelled=event(['UID:repeat','RECURRENCE-ID:20261021T140000Z','DTSTART:20261021T140000Z','DTEND:20261021T150000Z','STATUS:CANCELLED','SUMMARY:Cancelled']);
+let rows=ctx.publicFeedEvents(feed([base,changed,cancelled].join('\r\n')),'2026-10-01','2026-11-01');assert.equal(rows.length,2);assert.equal(rows[1].summary,'Changed');assert.equal(rows[1].start.dateTime,'2026-10-20T16:00:00.000Z');
+assert.equal(ctx.publicFeedEvents(feed(''),'2026-10-01','2026-11-01').length,0);
+const holiday=event(['UID:break','DTSTART;VALUE=DATE:20261221','DTEND;VALUE=DATE:20270102','SUMMARY:Winter Break']);rows=ctx.publicFeedEvents(feed(holiday),'2026-12-01','2027-02-01');assert.equal(rows[0].end.date,'2027-01-02');
+assert.equal(new Intl.DateTimeFormat('en-CA',{timeZone:'America/Toronto',hour:'numeric',hour12:false}).format(new Date('2026-10-20T16:00:00Z')),'12');
+assert.match(app,/setInterval\(refreshGoogle,300000\)/);assert.ok(!app.includes('/api/calendar-feed?'));assert.ok(!/chatgpt\.site|modelContext|AIza[\w-]{20}/.test(app));
+const realFetch=globalThis.fetch;globalThis.fetch=async()=>new Response(feed(holiday));const id=JSON.parse(fs.readFileSync('configuration/calendars.json'))[0].id;
+const response=await worker.fetch(new Request('https://independent.example/api/calendar-feed?id='+encodeURIComponent(id),{headers:{Origin:'https://example.github.io'}}));assert.equal(response.status,200);assert.equal(response.headers.get('Access-Control-Allow-Origin'),'*');assert.match(await response.text(),/Winter Break/);assert.equal((await worker.fetch(new Request('https://example/api/calendar-feed?id=bad'))).status,403);globalThis.fetch=async()=>{throw Error('offline')};assert.equal((await worker.fetch(new Request('https://example/api/calendar-feed?id='+encodeURIComponent(id)))).status,502);globalThis.fetch=realFetch;
+for(const match of fs.readFileSync('production/index.html','utf8').matchAll(/(?:src|href)="([^"#]+)"/g)){const path=match[1];if(!/^(https?:|data:)/.test(path))assert.ok(fs.existsSync('production/'+path),path);}
+for(const name of ['fisherville-main','fisherville-menu','fisherville-shared-main','fisherville-upcoming']){const file='/tmp/'+name+'.ics';if(fs.existsSync(file)){const parsed=ctx.publicFeedEvents(fs.readFileSync(file,'utf8'),'2026-10-11','2027-02-01');console.log(name+': '+parsed.length+' actual feed occurrences parsed');}}
+console.log('PASS: recurrence changes/cancellations, deletions, all day range, Toronto conversion, five minute interval, proxy CORS/allowlist/failure handling, production assets.');
